@@ -6,19 +6,46 @@ import Marquee from './components/Marquee'
 
 function App() {
   const [count, setCount] = useState(0)
-  {/*submission feature state*/ }
   const [selectedFile, setSelectedFile] = useState(null)
+  const [uploadResult, setUploadResult] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
+      setUploadResult(null);
+      setError(null);
     }
   }
 
-  const handleSubmit = () => {
-    // Handle submission when backend is ready
-    console.log('Submitting file:', selectedFile);
+  const handleSubmit = async () => {
+    if (!selectedFile) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('http://localhost:8000/predict', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setUploadResult(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -85,7 +112,7 @@ function App() {
           </p>
 
           {/* File Upload Section */}
-          <div className='max-w-3xl  mx-auto p-6 bg-white/10 backdrop-blur-sm rounded-3xl'>
+          <div className='max-w-3xl mx-auto p-6 bg-white/10 backdrop-blur-sm rounded-3xl'>
             <h3 className='text-white text-xl font-semibold mb-4 text-center'>
               Upload Your YAML File
             </h3>
@@ -115,12 +142,60 @@ function App() {
               <p className='text-white/60 text-sm mt-4'>
                 Supported formats: .yaml, .yml
               </p>
-              {selectedFile && (
+              
+              {error && (
+                <p className='text-red-500 mt-4'>
+                  Error: {error}
+                </p>
+              )}
+              
+              {isLoading && (
+                <div className='mt-4 text-white'>
+                  Processing...
+                </div>
+              )}
+
+              {uploadResult && (
+                <div className='mt-6 w-full bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20'>
+                  <h4 className='text-white text-xl font-semibold mb-4'>Analysis Results</h4>
+                  
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    {/* Hazard Status */}
+                    <div className={`p-4 rounded-xl ${
+                      uploadResult.is_hazardous 
+                        ? 'bg-red-500/20 border border-red-500/50' 
+                        : 'bg-green-500/20 border border-green-500/50'
+                    }`}>
+                      <h5 className='text-white text-lg font-medium mb-2'>Hazard Status</h5>
+                      <p className='text-white/90 text-2xl font-bold'>
+                        {uploadResult.is_hazardous ? 'Hazardous' : 'Non-Hazardous'}
+                      </p>
+                    </div>
+
+                    {/* Confidence Score */}
+                    <div className='bg-white/10 p-4 rounded-xl border border-white/20'>
+                      <h5 className='text-white text-lg font-medium mb-2'>Confidence Score</h5>
+                      <p className='text-white/90 text-2xl font-bold'>
+                        {(uploadResult.confidence * 100).toFixed(2)}%
+                      </p>
+                    </div>
+
+              
+                  
+
+                  
+                    
+                  </div>
+                </div>
+              )}
+
+              {selectedFile && !isLoading && (
                 <button
                   onClick={handleSubmit}
-                  className='mt-6 px-6 py-2 bg-black hover:bg-black text-white rounded-lg transition-colors '
+                  className='mt-6 px-6 py-2 bg-black hover:bg-gray-900 text-white rounded-lg transition-colors disabled:opacity-50'
+                  disabled={isLoading}
                 >
-                  Submit File
+                  {isLoading ? 'Processing...' : 'Submit File'}
                 </button>
               )}
             </div>
