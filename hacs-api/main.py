@@ -4,7 +4,11 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
-from model.model_def import Asteroid_Detection, LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+import pandas as pd
+import xgboost as xgb
+import pickle
+from process import read_yaml
 
 app = FastAPI()
 
@@ -16,23 +20,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# BASE_DIR = Path(__file__).resolve().parent
-# MODEL_NAME = ""
-# MODEL_PATH = BASE_DIR / "model" / MODEL_NAME
-# DEVICE = torch.device('cpu')
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_FILE = 'hazardous_asteroid_xgboost_model.json'
+SCALER_FILE = 'scaler.pkl'
+FEATURES_FILE = 'feature_names.pkl'
+MODEL_PATH = BASE_DIR / "model" / MODEL_FILE
+SCALER_PATH = BASE_DIR / "model" / SCALER_FILE
+FEATURES_PATH = BASE_DIR / "model" / FEATURES_FILE
+DEVICE = torch.device('cpu')
 
+xgb_model = None
+scaler = None
+feature_names = None
 
-# model = Asteroid_Detection()
-# model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-# model.eval()
-# classes = ["Hazardous", "Non-Hazardous"]
-# label_encoder = LabelEncoder()
-# label_encoder.fit_transform(classes)
+try:
+    # Load the trained XGBoost model
+    xgb_model = xgb.XGBClassifier()
+    xgb_model.load_model(MODEL_PATH)
+
+    # Load the fitted StandardScaler
+    with open(SCALER_PATH, 'rb') as f:
+        scaler = pickle.load(f)
+
+    # Load the feature names list (required for correct feature ordering)
+    with open(FEATURES_PATH, 'rb') as f:
+        feature_names = pickle.load(f)
+
+    print("✅ Model, scaler, and feature names loaded successfully.")
+
+except FileNotFoundError as e:
+    print(f"❌ Error: Missing required file: {e.filename}")
+    print("Please make sure all 3 artifact files are in the same directory.")
+    xgb_model = None
 
 class OutputData(BaseModel):
-    prediction: str
-    confidence: float
-
+    is_hazardous: bool
+    hazard_probability: float
 
 @app.get("/")
 def home():
@@ -49,44 +72,36 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only YAML files are accepted")
     
     try:
-        # Read the YAML file
-        contents = await file.read()
-        yaml_data = yaml.safe_load(contents)
-        
-        # Extract parameters
-        params = {
-            'epoch_date_close_approach': yaml_data.get('Epoch Date Close Approach'),
-            'relative_velocity_km_per_sec': yaml_data.get('Relative Velocity km per sec'),
-            'relative_velocity_km_per_hr': yaml_data.get('Relative Velocity km per hr'),
-            'miles_per_hour': yaml_data.get('Miles per hour'),
-            'miss_dist_astronomical': yaml_data.get('Miss Dist.(Astronomical)'),
-            'miss_dist_lunar': yaml_data.get('Miss Dist.(lunar)'),
-            'miss_dist_kilometers': yaml_data.get('Miss Dist.(kilometers)'),
-            'miss_dist_miles': yaml_data.get('Miss Dist.(miles)'),
-            'jupiter_tisserand_invariant': yaml_data.get('Jupiter Tisserand Invariant'),
-            'epoch_osculation': yaml_data.get('Epoch Osculation'),
-            'semi_major_axis': yaml_data.get('Semi Major Axis'),
-            'asc_node_longitude': yaml_data.get('Asc Node Longitude'),
-            'perihelion_arg': yaml_data.get('Perihelion Arg'),
-            'aphelion_dist': yaml_data.get('Aphelion Dist'),
-            'perihelion_time': yaml_data.get('Perihelion Time'),
-            'mean_anomaly': yaml_data.get('Mean Anomaly'),
-            'mean_motion': yaml_data.get('Mean Motion'),
-            'approach_year': yaml_data.get('approach_year'),
-            'approach_month': yaml_data.get('approach_month'),
-            'approach_day': yaml_data.get('approach_day'),
-            'orbital_period': yaml_data.get('Orbital Period'),
-            'orbit_uncertainity': yaml_data.get('Orbit Uncertainity')
-        }
-        
-        # TODO: Process params and pass to model for prediction
-        # For now, returning dummy prediction
-        prediction = "Hazardous"  # Dummy prediction
-        confidence = 0.95  # Dummy confidence
+        # 1. Process the uploaded YAML file and convert to DataFrame
+        df_processed = await read_yaml(file)
+
+        # 2. Ensure all required columns are present and in the correct order
+        #    This step is CRITICAL for the model to work correctly
+        input_df = df_processed[feature_names]
+
+        # 3. Scale the data using the pre-fitted scaler
+        scaled_data = scaler.transform(input_df)
+
+        # 4. Make prediction using the XGBoost model
+        prediction_raw = xgb_model.predict(scaled_data)
+        probability_raw = xgb_model.predict_proba(scaled_data)
+
+        # 5. Format the output
+        is_hazardous = bool(prediction_raw[0] == 1)
+        # Get the probability of the 'hazardous' class (class 1)
+        hazard_probability = float(probability_raw[0][1])
         
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML format: {str(e)}")
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail={
+            "error": f"Missing feature in input data: {e}",
+            "message": f"The model requires {len(feature_names)} features."
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
 
-    return {"prediction": prediction, "confidence": confidence}
+    return {
+        'is_hazardous': is_hazardous,
+        'hazard_probability': hazard_probability
+    }
