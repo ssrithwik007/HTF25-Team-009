@@ -3,6 +3,7 @@ import './App.css'
 import AsteroidScene from './components/AsteroidScene'
 import Galaxy from './components/Galaxy'
 import Marquee from './components/Marquee'
+import EarthScene from './components/EarthScene'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -82,7 +83,7 @@ function App() {
         </Marquee>
       </div>
 
-      {/* Additional Content Below Hero */}
+      {/* File Upload Section */}
       <div className='relative w-full min-h-screen'>
         {/* Galaxy Background */}
         <div className='absolute inset-0 z-0'>
@@ -105,11 +106,8 @@ function App() {
         {/* Content Overlay */}
         <div className='relative z-10 container mx-auto px-8 py-16'>
           <h2 className='text-white text-center text-3xl font-bold mb-8'>
-            About the System
+            Check your Asteroid
           </h2>
-          <p className='text-white/80 text-center text-xl max-w-4xl mx-auto leading-relaxed mb-16'>
-            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Eveniet sint optio iusto totam vitae aperiam consectetur ratione similique illo, veniam rem ut tenetur facere quos qui nihil atque corrupti ipsa!
-          </p>
 
           {/* File Upload Section */}
           <div className='max-w-3xl mx-auto p-6 bg-white/10 backdrop-blur-sm rounded-3xl'>
@@ -174,17 +172,11 @@ function App() {
 
                     {/* Confidence Score */}
                     <div className='bg-white/10 p-4 rounded-xl border border-white/20'>
-                      <h5 className='text-white text-lg font-medium mb-2'>Confidence Score</h5>
+                      <h5 className='text-white text-lg font-medium mb-2'>Hazard Probability</h5>
                       <p className='text-white/90 text-2xl font-bold'>
-                        {(uploadResult.confidence * 100).toFixed(2)}%
+                        {(uploadResult.hazard_probability * 100).toFixed(2)}%
                       </p>
                     </div>
-
-              
-                  
-
-                  
-                    
                   </div>
                 </div>
               )}
@@ -201,6 +193,20 @@ function App() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Marquee Separators */}
+      <div className='relative z-30'>
+        <Marquee speed={30} direction="left" pauseOnHover={true} className="bg-black border-t-2 border-white py-2">
+          <span className="text-white text-lg mx-4">
+            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          </span>
+        </Marquee>
+        <Marquee speed={30} direction="right" pauseOnHover={true} className="bg-black border-b-2 border-white py-2">
+          <span className="text-white text-lg mx-4">
+            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          </span>
+        </Marquee>
       </div>
     </div>
   )
