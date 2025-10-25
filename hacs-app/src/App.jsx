@@ -6,6 +6,20 @@ import Marquee from './components/Marquee'
 
 function App() {
   const [count, setCount] = useState(0)
+  {/*submission feature state*/ }
+  const [selectedFile, setSelectedFile] = useState(null)
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  }
+
+  const handleSubmit = () => {
+    // Handle submission when backend is ready
+    console.log('Submitting file:', selectedFile);
+  }
 
   return (
     <div className='w-full min-h-screen bg-black'>
@@ -66,9 +80,51 @@ function App() {
           <h2 className='text-white text-center text-3xl font-bold mb-8'>
             About the System
           </h2>
-          <p className='text-white/80 text-center text-xl max-w-4xl mx-auto leading-relaxed'>
+          <p className='text-white/80 text-center text-xl max-w-4xl mx-auto leading-relaxed mb-16'>
             Lorem ipsum, dolor sit amet consectetur adipisicing elit. Eveniet sint optio iusto totam vitae aperiam consectetur ratione similique illo, veniam rem ut tenetur facere quos qui nihil atque corrupti ipsa!
           </p>
+
+          {/* File Upload Section */}
+          <div className='max-w-3xl  mx-auto p-6 bg-white/10 backdrop-blur-sm rounded-3xl'>
+            <h3 className='text-white text-xl font-semibold mb-4 text-center'>
+              Upload Your YAML File
+            </h3>
+            <div className='flex flex-col items-center w-full'>
+              <label 
+                htmlFor='yamlFile' 
+                className='w-full border-2 border-dashed border-white/50 rounded-lg p-8 text-center cursor-pointer hover:border-white/80 transition-colors'
+              >
+                <div className='text-white/80'>
+                  {selectedFile ? (
+                    <p className='mb-2'>Selected file: {selectedFile.name}</p>
+                  ) : (
+                    <>
+                      <p className='mb-2'>Drag and drop your YAML file here</p>
+                      <p className='text-sm'>or click to browse</p>
+                    </>
+                  )}
+                </div>
+                <input 
+                  type='file' 
+                  id='yamlFile' 
+                  accept='.yaml,.yml'
+                  className='hidden'
+                  onChange={handleFileUpload}
+                />
+              </label>
+              <p className='text-white/60 text-sm mt-4'>
+                Supported formats: .yaml, .yml
+              </p>
+              {selectedFile && (
+                <button
+                  onClick={handleSubmit}
+                  className='mt-6 px-6 py-2 bg-black hover:bg-black text-white rounded-lg transition-colors '
+                >
+                  Submit File
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
