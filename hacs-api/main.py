@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 import pandas as pd
 import xgboost as xgb
 import pickle
-from process import read_yaml
+from process import read_yaml, get_feature_contributions, get_top_influential_features, calculate_confidence_metrics, generate_summary
 
 app = FastAPI()
 
@@ -65,7 +65,7 @@ def home():
 def health():
     return {"status": "ok"}
 
-@app.post("/predict", response_model=OutputData, status_code=200)
+@app.post("/predict", status_code=200)
 async def predict(file: UploadFile = File(...)):
     # Validate file type
     if not file.filename.endswith(('.yaml', '.yml')):
@@ -78,6 +78,7 @@ async def predict(file: UploadFile = File(...)):
         # 2. Ensure all required columns are present and in the correct order
         #    This step is CRITICAL for the model to work correctly
         input_df = df_processed[feature_names]
+        original_values = df_processed.copy()
 
         # 3. Scale the data using the pre-fitted scaler
         scaled_data = scaler.transform(input_df)
@@ -90,6 +91,42 @@ async def predict(file: UploadFile = File(...)):
         is_hazardous = bool(prediction_raw[0] == 1)
         # Get the probability of the 'hazardous' class (class 1)
         hazard_probability = float(probability_raw[0][1])
+
+        result = {
+            'classification': 'HAZARDOUS' if is_hazardous else 'NON-HAZARDOUS',
+            'is_hazardous': is_hazardous,
+            'confidence': {
+                'hazard_probability': hazard_probability,
+                'hazard_probability_percent': f"{hazard_probability * 100:.2f}%",
+                'non_hazard_probability': float(probability_raw[0][0]),
+                'non_hazard_probability_percent': f"{probability_raw[0][0] * 100:.2f}%"
+            }
+        }
+        include_interpretability=True
+        # Add interpretability
+        if include_interpretability:
+            # Get feature contributions
+            feature_contributions = get_feature_contributions(
+                xgb_model, scaled_data, feature_names
+            )
+
+            # Get top 5 influential features with explanations
+            influential_features = get_top_influential_features(
+                feature_contributions, original_values, top_n=5
+            )
+
+            # Calculate confidence
+            confidence_metrics = calculate_confidence_metrics(probability_raw)
+
+            # Generate summary
+            summary = generate_summary(is_hazardous, influential_features, hazard_probability * 100)
+
+            result['interpretability'] = {
+                'confidence_level': confidence_metrics['confidence_level'],
+                'confidence_score': confidence_metrics['confidence_score'],
+                'top_5_influential_features': influential_features,
+                'summary': summary
+            }
         
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML format: {str(e)}")
@@ -101,7 +138,4 @@ async def predict(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
 
-    return {
-        'is_hazardous': is_hazardous,
-        'hazard_probability': hazard_probability
-    }
+    return result

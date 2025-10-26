@@ -208,7 +208,7 @@ function MainPage() {
                     <div className='bg-white/10 p-4 rounded-xl border border-white/20'>
                       <h5 className='text-white text-lg font-medium mb-2'>Hazard Probability</h5>
                       <p className='text-white/90 text-2xl font-bold'>
-                        {(uploadResult.hazard_probability * 100).toFixed(2)}%
+                        {(uploadResult.confidence.hazard_probability * 100).toFixed(2)}%
                       </p>
                     </div>
                   </div>
@@ -269,7 +269,7 @@ function MainPage() {
                   DANGER
                 </h1>
                 <p className='text-red-500 text-center text-3xl md:text-4xl font-bold animate-pulse'>
-                  Hazard Probability: {(uploadResult.hazard_probability * 100).toFixed(2)}%
+                  Hazard Probability: {(uploadResult.confidence.hazard_probability * 100).toFixed(2)}%
                 </p>
               </>
             ) : (
@@ -278,7 +278,7 @@ function MainPage() {
                   SAFE
                 </h1>
                 <p className='text-green-400 text-center text-3xl md:text-4xl font-bold'>
-                  Hazard Probability: {(uploadResult.hazard_probability * 100).toFixed(2)}%
+                  Hazard Probability: {(uploadResult.confidence.hazard_probability * 100).toFixed(2)}%
                 </p>
               </>
             )}

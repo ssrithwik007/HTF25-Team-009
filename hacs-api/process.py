@@ -1,5 +1,6 @@
 import yaml
 import pandas as pd
+import numpy as np
 from fastapi import HTTPException
 from sklearn.preprocessing import LabelEncoder
 
@@ -91,3 +92,134 @@ async def read_yaml(file):
         df_processed['kinetic_energy_proxy'] = (df_processed['Diameter'] ** 3) * (df_processed['Relative Velocity km per sec'] ** 2)
 
     return df_processed
+
+def get_feature_contributions(model, scaled_data, feature_names):
+    """Calculate individual feature contributions"""
+    importance = model.feature_importances_
+    margin = model.predict(scaled_data, output_margin=True)[0]
+    scaled_values = scaled_data[0]
+    contributions = importance * scaled_values
+
+    if np.sum(np.abs(contributions)) > 0:
+        contributions = contributions * (margin / np.sum(np.abs(contributions)))
+
+    feature_contributions = {}
+    for feature, contrib, value in zip(feature_names, contributions, scaled_values):
+        feature_contributions[feature] = {
+            'contribution': float(contrib),
+            'scaled_value': float(value)
+        }
+
+    return feature_contributions
+
+def explain_feature_influence(feature_name, contribution, actual_value, is_hazardous):
+    """
+    Generate human-readable explanation for why a feature influenced the prediction
+    """
+    impact = "increased" if contribution > 0 else "decreased"
+    direction = "hazardous" if contribution > 0 else "non-hazardous"
+
+    # Feature-specific explanations
+    explanations = {
+        'Miss Dist.(Astronomical)': {
+            'low': f"The asteroid passes very close to Earth ({actual_value:.4f} AU), significantly increasing the hazard risk.",
+            'high': f"The asteroid maintains a safe distance from Earth ({actual_value:.4f} AU), reducing the hazard risk."
+        },
+        'Diameter': {
+            'low': f"The asteroid is relatively small ({actual_value:.1f}m), reducing potential impact damage.",
+            'high': f"The asteroid is large ({actual_value:.1f}m), which would cause significant damage if it impacted Earth."
+        },
+        'Relative Velocity km per sec': {
+            'low': f"The asteroid moves at a moderate speed ({actual_value:.2f} km/s), resulting in lower impact energy.",
+            'high': f"The asteroid travels at high speed ({actual_value:.2f} km/s), which increases impact energy."
+        },
+        'Orbit Uncertainity': {
+            'low': f"The orbit is well-known (uncertainty: {actual_value}), allowing accurate predictions.",
+            'high': f"The orbit has higher uncertainty ({actual_value}), making the trajectory less predictable."
+        },
+        'Orbital Period': {
+            'low': f"Short orbital period ({actual_value:.2f} years) means more frequent approaches to Earth.",
+            'high': f"Long orbital period ({actual_value:.2f} years) means infrequent approaches to Earth."
+        }
+    }
+
+    # Determine if value is "low" or "high" based on contribution
+    value_category = 'high' if contribution > 0 else 'low'
+
+    # Get specific explanation or generate generic one
+    if feature_name in explanations:
+        explanation = explanations[feature_name].get(value_category,
+            f"This feature {impact} the {direction} classification.")
+    else:
+        explanation = f"Feature value ({actual_value}) {impact} the likelihood of hazardous classification."
+
+    return explanation
+
+def get_top_influential_features(feature_contributions, original_values, top_n=5):
+    """
+    Get top N most influential features with explanations
+    """
+    # Sort by absolute contribution
+    sorted_features = sorted(
+        feature_contributions.items(),
+        key=lambda x: abs(x[1]['contribution']),
+        reverse=True
+    )
+
+    influential_features = []
+    for feature, data in sorted_features[:top_n]:
+        # Get the actual (unscaled) value
+        actual_value = original_values[feature].values[0] if feature in original_values else data['scaled_value']
+
+        # Determine if this increases or decreases hazard risk
+        impact_direction = "INCREASES" if data['contribution'] > 0 else "DECREASES"
+
+        # Get explanation
+        explanation = explain_feature_influence(
+            feature,
+            data['contribution'],
+            actual_value,
+            data['contribution'] > 0
+        )
+
+        influential_features.append({
+            'feature': feature,
+            'actual_value': float(actual_value),
+            'contribution_score': float(abs(data['contribution'])),
+            'impact_direction': impact_direction,
+            'explanation': explanation
+        })
+
+    return influential_features
+
+def calculate_confidence_metrics(probabilities):
+    """Calculate confidence metrics for the prediction"""
+    hazard_prob = probabilities[0][1]
+    confidence_score = abs(hazard_prob - 0.5) * 2
+
+    if confidence_score > 0.8:
+        confidence_level = "VERY HIGH"
+    elif confidence_score > 0.6:
+        confidence_level = "HIGH"
+    elif confidence_score > 0.4:
+        confidence_level = "MODERATE"
+    else:
+        confidence_level = "LOW"
+
+    return {
+        'confidence_score': float(confidence_score),
+        'confidence_level': confidence_level
+    }
+
+def generate_summary(is_hazardous, influential_features, hazard_probability):
+    """Generate a concise summary of the classification"""
+    classification = "HAZARDOUS" if is_hazardous else "NON-HAZARDOUS"
+
+    summary = f"Classification: {classification} ({hazard_probability:.1f}% confidence)\n\n"
+    summary += "Key Factors:\n"
+
+    for i, feature in enumerate(influential_features, 1):
+        emoji = "🔴" if feature['impact_direction'] == "INCREASES" else "🟢"
+        summary += f"{i}. {emoji} {feature['feature']}: {feature['explanation']}\n"
+
+    return summary
