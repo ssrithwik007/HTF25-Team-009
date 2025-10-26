@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import './App.css'
 import AsteroidScene from './components/AsteroidScene'
@@ -14,6 +14,7 @@ function MainPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [sceneKey, setSceneKey] = useState(0) // Key to force re-render of ResultScene
+  const audioRef = useRef(null)
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -60,6 +61,20 @@ function MainPage() {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  const playSound = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0 // Reset to start
+      audioRef.current.play()
+      // Stop after 2 seconds
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.pause()
+          audioRef.current.currentTime = 0
+        }
+      }, 3500)
     }
   }
 
@@ -212,6 +227,81 @@ function MainPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Interpretability Section */}
+                    <div className='mt-6'>
+                      {/* Confidence Level */}
+                      <div className='bg-white/10 p-4 rounded-xl border border-white/20 mb-4'>
+                        <div className='flex items-center justify-between'>
+                          <div>
+                            <h5 className='text-white text-lg font-medium mb-1'>Confidence Level</h5>
+                            <p className='text-white/70 text-sm'>Model certainty in prediction</p>
+                          </div>
+                          <div className='text-right'>
+                            <p className={`text-2xl font-bold ${
+                              uploadResult.interpretability.confidence_level === 'HIGH' 
+                                ? 'text-green-400' 
+                                : uploadResult.interpretability.confidence_level === 'MEDIUM'
+                                ? 'text-yellow-400'
+                                : 'text-orange-400'
+                            }`}>
+                              {uploadResult.interpretability.confidence_level}
+                            </p>
+                            <p className='text-white/60 text-sm'>
+                              {(uploadResult.interpretability.confidence_score * 100).toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top Influential Features */}
+                      <div className='bg-white/10 p-4 rounded-xl border border-white/20'>
+                        <h5 className='text-white text-lg font-medium mb-4'>Top Influential Features</h5>
+                        <div className='space-y-3'>
+                          {uploadResult.interpretability.top_5_influential_features.map((feature, index) => (
+                            <div 
+                              key={index}
+                              className='bg-white/5 p-3 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200'
+                            >
+                              <div className='flex items-start justify-between mb-2'>
+                                <div className='flex items-center gap-2'>
+                                  <span className={`text-xl ${
+                                    feature.impact_direction === 'INCREASES' ? '🔴' : '🟢'
+                                  }`}>
+                                    {feature.impact_direction === 'INCREASES' ? '🔴' : '🟢'}
+                                  </span>
+                                  <div>
+                                    <h6 className='text-white font-medium text-sm'>{feature.feature}</h6>
+                                    <p className='text-white/60 text-xs'>Value: {feature.actual_value}</p>
+                                  </div>
+                                </div>
+                                <div className='text-right'>
+                                  <p className='text-white/80 text-xs font-medium'>
+                                    Impact: {(feature.contribution_score * 100).toFixed(2)}%
+                                  </p>
+                                  <p className={`text-xs font-semibold ${
+                                    feature.impact_direction === 'INCREASES' ? 'text-red-400' : 'text-green-400'
+                                  }`}>
+                                    {feature.impact_direction}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className='text-white/70 text-xs mt-2 leading-relaxed'>
+                                {feature.explanation}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <div className='bg-white/10 p-4 rounded-xl border border-white/20 mt-4'>
+                        <h5 className='text-white text-lg font-medium mb-3'>Analysis Summary</h5>
+                        <div className='text-white/80 text-sm leading-relaxed whitespace-pre-line'>
+                          {uploadResult.interpretability.summary}
+                        </div>
+                      </div>
+                    </div>
                 </div>
               )}
 
@@ -283,22 +373,28 @@ function MainPage() {
               </>
             )}
           </div>
+
+          {/* Sound Button - Bottom Right with RGB Border */}
+          <div className='fixed bottom-8 right-8 z-40 w-14 h-14 rounded-full p-[2px] animate-spin-slow bg-gradient-to-r from-red-500 via-green-500 via-blue-500 to-red-500 bg-[length:200%_200%]'>
+            <button
+              onClick={playSound}
+              className='w-full h-full rounded-full bg-black/80 backdrop-blur-md hover:bg-black/60 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]'
+              aria-label='Play sound'
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Hidden Audio Element */}
+          <audio ref={audioRef}>
+            <source src="/music.mp3" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
         </div>
       )}
 
-      {/* Marquee Separators */}
-      <div className='relative z-30'>
-        <Marquee speed={30} direction="left" pauseOnHover={true} className="bg-black border-t-2 border-white py-2">
-          <span className="bitcount-grid-single text-white text-xl mx-4">
-            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
-          </span>
-        </Marquee>
-        <Marquee speed={30} direction="right" pauseOnHover={true} className="bg-black border-b-2 border-white py-2">
-          <span className="bitcount-grid-single text-white text-xl mx-4">
-            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
-          </span>
-        </Marquee>
-      </div>
     </div>
   )
 }
