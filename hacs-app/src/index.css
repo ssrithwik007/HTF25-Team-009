@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=Orbitron:wght@700&family=Zen+Dots&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -70,4 +71,36 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.orbitron-regular {
+  font-family: "Orbitron", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.orbitron-bold {
+  font-family: "Orbitron", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.bitcount-grid-single {
+  font-family: "Bitcount Grid Single", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "slnt" 0,
+    "CRSV" 0.5,
+    "ELSH" 0,
+    "ELXP" 0;
+}
+
+.zen-dots-regular {
+  font-family: "Zen Dots", sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }

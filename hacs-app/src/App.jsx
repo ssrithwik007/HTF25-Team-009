@@ -6,6 +6,7 @@ import Galaxy from './components/Galaxy'
 import Marquee from './components/Marquee'
 import EarthScene from './components/EarthScene'
 import MoreInfo from './components/MoreInfo'
+import ResultScene from './components/ResultScene'
 
 function MainPage() {
   const [count, setCount] = useState(0)
@@ -13,6 +14,7 @@ function MainPage() {
   const [uploadResult, setUploadResult] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [sceneKey, setSceneKey] = useState(0) // Key to force re-render of ResultScene
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -28,6 +30,9 @@ function MainPage() {
 
     setIsLoading(true);
     setError(null);
+    
+    // Reset the scene by incrementing the key
+    setSceneKey(prev => prev + 1);
 
     try {
       const formData = new FormData();
@@ -44,6 +49,14 @@ function MainPage() {
 
       const data = await response.json();
       setUploadResult(data);
+      
+      // Scroll to result section after getting the result
+      setTimeout(() => {
+        const resultSection = document.getElementById('result-section');
+        if (resultSection) {
+          resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,10 +109,10 @@ function MainPage() {
 
         {/* Content Overlay */}
         <div className='absolute inset-0 z-20 flex flex-col items-center justify-center'>
-          <h1 className='text-white text-center text-5xl md:text-6xl font-bold mb-8 px-4'>
-            Hazardous Asteroid Classification System
+          <h1 className='bitcount-grid-single text-white text-center text-5xl md:text-6xl font-bold mb-5 px-4'>
+            HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
           </h1>
-          <p className='text-white/80 text-center text-xl md:text-2xl max-w-3xl px-8'>
+          <p className='orbitron-regular text-white/80 text-center text-xl md:text-2xl max-w-3xl px-8'>
             Advanced AI-powered system for detecting and classifying potentially hazardous asteroids
           </p>
         </div>
@@ -109,13 +122,13 @@ function MainPage() {
       {/* Marquee Separators */}
       <div className='relative z-30'>
         <Marquee speed={30} direction="left" pauseOnHover={true} className="bg-black border-t-2 border-white py-2">
-          <span className="text-white text-lg mx-4">
-            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
           </span>
         </Marquee>
         <Marquee speed={30} direction="right" pauseOnHover={true} className="bg-black border-b-2 border-white py-2">
-          <span className="text-white text-lg mx-4">
-            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
           </span>
         </Marquee>
       </div>
@@ -129,35 +142,35 @@ function MainPage() {
             mouseRepulsion={false}
             mouseInteraction={true}
             density={1}
-            glowIntensity={0.5}
+            glowIntensity={0.2}
             saturation={0}
-            twinkleIntensity={0.3}
+            twinkleIntensity={0.2}
             rotationSpeed={0.1}
             repulsionStrength={2}
             autoCenterRepulsion={0}
-            starSpeed={0.5}
+            starSpeed={0.3}
             animatonSpeed={1}
-            hueShift={140}
+            hueShift={0}
           />
         </div>
 
         {/* Content Overlay */}
         <div className='relative z-10 container mx-auto px-8 py-16'>
-          <h2 className='text-white text-center text-3xl font-bold mb-8'>
+          <h2 className='orbitron-bold text-white text-center text-3xl font-bold mb-8'>
             Check your Asteroid
           </h2>
 
           {/* File Upload Section */}
           <div className='max-w-3xl mx-auto p-6 bg-white/10 backdrop-blur-sm rounded-3xl'>
-            <h3 className='text-white text-xl font-semibold mb-4 text-center'>
+            <h3 className='orbitron-regular text-white text-xl font-semibold mb-4 text-center'>
               Upload Your YAML File
             </h3>
-            <div className='flex flex-col items-center w-full'>
-              <label
-                htmlFor='yamlFile'
+            <div className='orbitron-regular flex flex-col items-center w-full'>
+              <label 
+                htmlFor='yamlFile' 
                 className='w-full border-2 border-dashed border-white/50 rounded-lg p-8 text-center cursor-pointer hover:border-white/80 transition-colors'
               >
-                <div className='text-white/80'>
+                <div className='orbitron-regular text-white/80'>
                   {selectedFile ? (
                     <p className='mb-2'>Selected file: {selectedFile.name}</p>
                   ) : (
@@ -192,7 +205,7 @@ function MainPage() {
               )}
 
               {uploadResult && (
-                <div className='mt-6 w-full bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20'>
+                <div className='orbitron-regular mt-6 w-full bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20'>
                   <h4 className='text-white text-xl font-semibold mb-4'>Analysis Results</h4>
 
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -236,13 +249,70 @@ function MainPage() {
       {/* Marquee Separators */}
       <div className='relative z-30'>
         <Marquee speed={30} direction="left" pauseOnHover={true} className="bg-black border-t-2 border-white py-2">
-          <span className="text-white text-lg mx-4">
-            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
           </span>
         </Marquee>
         <Marquee speed={30} direction="right" pauseOnHover={true} className="bg-black border-b-2 border-white py-2">
-          <span className="text-white text-lg mx-4">
-            HACKTOBER FEST 2024 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          </span>
+        </Marquee>
+      </div>
+
+      {/* Result Section with Asteroid Background - Only show after result is available */}
+      {uploadResult && (
+        <div id='result-section' className='orbitron-regular relative w-full h-screen'>
+          {/* Flashing border - only for hazardous */}
+          {uploadResult?.is_hazardous && (
+            <div className='absolute inset-0 border-20 border-red-600 pointer-events-none z-30 animate-pulse'></div>
+          )}
+          
+          {/* Static green border - only for safe */}
+          {!uploadResult?.is_hazardous && (
+            <div className='absolute inset-0 border-20 border-green-500 pointer-events-none z-30'></div>
+          )}
+          
+          {/* Background */}
+          <div className='absolute inset-0'>
+            <ResultScene key={sceneKey} isHazardous={uploadResult?.is_hazardous || false} />
+          </div>
+          
+          {/* Content Overlay */}
+          <div className='absolute inset-0 z-20 flex flex-col items-center justify-center'>
+            {uploadResult?.is_hazardous ? (
+              <>
+                <h1 className='text-red-600 text-center text-8xl md:text-9xl font-black mb-8 px-4 animate-pulse drop-shadow-[0_0_30px_rgba(220,38,38,0.8)]'>
+                  DANGER
+                </h1>
+                <p className='text-red-500 text-center text-3xl md:text-4xl font-bold animate-pulse'>
+                  Hazard Probability: {(uploadResult.hazard_probability * 100).toFixed(2)}%
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className='text-green-500 text-center text-8xl md:text-9xl font-black mb-8 px-4 drop-shadow-[0_0_30px_rgba(34,197,94,0.8)]'>
+                  SAFE
+                </h1>
+                <p className='text-green-400 text-center text-3xl md:text-4xl font-bold'>
+                  Hazard Probability: {(uploadResult.hazard_probability * 100).toFixed(2)}%
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Marquee Separators */}
+      <div className='relative z-30'>
+        <Marquee speed={30} direction="left" pauseOnHover={true} className="bg-black border-t-2 border-white py-2">
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
+          </span>
+        </Marquee>
+        <Marquee speed={30} direction="right" pauseOnHover={true} className="bg-black border-b-2 border-white py-2">
+          <span className="bitcount-grid-single text-white text-xl mx-4">
+            HACKTOBER FEST 2025 - TEAM 009 - HAZARDOUS ASTEROID CLASSIFICATION SYSTEM
           </span>
         </Marquee>
       </div>

@@ -10,7 +10,7 @@ function EarthModel() {
   // Rotate Earth continuously around its tilted axis
   useFrame((state, delta) => {
     if (groupRef.current) {
-        groupRef.current.rotation.y += delta * 0.2;
+      groupRef.current.rotation.y += delta * 0.2; // Rotate around Y-axis
     }
   });
   
@@ -18,7 +18,7 @@ function EarthModel() {
   const earthTilt = (23.5 * Math.PI) / 180;
   
   return (
-    <group ref={groupRef} position={[-7, -6, -10]} scale={0.02} rotation={[0, 0, earthTilt]}>
+    <group ref={groupRef} position={[-10, -8, 0]} scale={0.003} rotation={[0, 0, earthTilt]}>
       <Center>
         <primitive object={scene} scale={1}/>
       </Center>
@@ -51,7 +51,7 @@ export default function EarthScene() {
       {/* Three.js Canvas with Earth */}
       <div className="absolute inset-0 z-10">
         <Canvas 
-          camera={{ position: [0, 0, 0], fov: 75 }}
+          camera={{ position: [0, 0, 10], fov: 45 }}
           gl={{ alpha: true }}
           style={{ background: 'transparent' }}
         >
