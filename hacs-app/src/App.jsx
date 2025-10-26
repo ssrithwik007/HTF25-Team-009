@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import './App.css'
 import AsteroidScene from './components/AsteroidScene'
 import Galaxy from './components/Galaxy'
 import Marquee from './components/Marquee'
-import EarthScene from './components/EarthScene'
 import MoreInfo from './components/MoreInfo'
 import ResultScene from './components/ResultScene'
 
@@ -67,38 +66,22 @@ function MainPage() {
   return (
     
     <div className='w-full min-h-screen bg-black'>
-      {/*dashboard section */}
-   <div className='relative w-full py-4 transparent border-b border-white/20 z-20'>
-      <div className='container mx-auto px-8'>
-        <div className='flex items-center justify-between max-w-5xl mx-auto'>
-          {/* Compact Stats */}
-          <div className='flex items-center gap-6'>
-            {/* Stat 1 */}
-            <div className='flex items-center gap-2 group cursor-pointer'>
-            
-              <span className='text-white text-xs font-medium'>HACS</span>
-            </div>
+      {/* Glassmorphism Navbar */}
+      <div className='fixed top-0 left-0 right-0 py-4 bg-white/5 backdrop-blur-md border-b border-white/10 z-50'>
+        <div className='container mx-auto px-8'>
+          <div className='flex items-center justify-between max-w-7xl mx-auto'>
+            {/* Logo */}
+            <span className='text-white text-2xl font-medium orbitron-bold'>HACS</span>
 
-            <div className='w-px h-4 bg-white/20'></div>
-
-            {/* Stat 2 */}
-           
-
-            <div className='w-px h-4 bg-white/20'></div>
-
-            {/* Stat 3 */}
-
+            {/* More Info Button */}
+            <Link to="/more-info">
+              <button className='px-4 py-1.5 border border-white/30 rounded-md text-white text-xs font-medium hover:bg-white/20 hover:border-white/50 transition-all duration-300'>
+                More Info
+              </button>
+            </Link>
           </div>
-
-          {/* More Info Button */}
-          <Link to = "/more-info">
-          <button className='px-4 py-1.5  border border-white/30 rounded-md text-white text-xs font-medium hover:bg-white/20 hover:border-white/50 transition-all duration-300'>
-            More Info
-          </button>
-          </Link>
         </div>
       </div>
-    </div>
 
       {/* Hero Section with Asteroid Background */}
       <div className='relative w-full h-screen'>
@@ -322,12 +305,10 @@ function MainPage() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/more-info" element={<MoreInfo />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<MainPage />} />
+      <Route path="/more-info" element={<MoreInfo />} />
+    </Routes>
   )
 }
 
